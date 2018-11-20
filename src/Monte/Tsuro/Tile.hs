@@ -73,6 +73,10 @@ primToSvgString x = case x of
     
     where getPoint (SvgPoint (x, y)) = (Text.pack . show $ x) <> " " <> (Text.pack . show $ y)
 
+makeHtml :: [SvgPrim] -> Text
+makeHtml x = "<svg height=\"100\" width=\"100\"><path d=\"" <> path <> "\" fill=\"transparent\" stroke=\"black\" /></svg>"
+    where path = Text.concat $ intersperse " " $ primToSvgString <$> x
+
 scale :: Double -> SvgPrim -> SvgPrim
 scale s p = (\(SvgPoint (x, y)) -> SvgPoint (x * s, y * s)) <$> p
 
@@ -84,7 +88,7 @@ renderTile (Tile paths _) = scale 100 . renderPath <$> liftedPaths
 
           renderPath :: (Int, Int) -> SvgPrim
           renderPath (p1, p2)
-              | p1 > 1 = fmap rotateRight $ renderPath ((p1 - 2) `mod` 2, (p2 - 2) `mod` 8)
+              | p1 > 1 = fmap rotateRight $ renderPath ((p1 + 6) `mod` 8, (p2 + 6) `mod` 8)
               | p1 == 1 = fmap flipHorizontal $ renderPath (flipH p1, flipH p2)
               | otherwise = render0To p2
 
@@ -104,5 +108,5 @@ renderTile (Tile paths _) = scale 100 . renderPath <$> liftedPaths
           rotateRight (SvgPoint (x, y)) = SvgPoint (1 - y, x)
 
           flipHorizontal :: SvgPoint -> SvgPoint
-          flipHorizontal (SvgPoint (x, y)) = SvgPoint (x, 1 - y)
+          flipHorizontal (SvgPoint (x, y)) = SvgPoint (1 - x, y)
 
