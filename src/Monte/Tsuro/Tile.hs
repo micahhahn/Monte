@@ -1,11 +1,11 @@
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Monte.Tsuro.Tile (
     Tile(..),
     allTiles,
     rotateTile,
-    tileEq
+    tileEq,
+    renderTile
 ) where
 
 import Data.List
@@ -16,6 +16,14 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Monoid ((<>))
 
+import Monte.Tsuro.Svg
+
+{- 
+     0 1
+   7 - - 2
+   6 - - 3
+     5 4
+-}
 data Tile = Tile 
     { paths :: Vector Int
     , rotations :: Int 
@@ -56,57 +64,38 @@ allTiles :: [Tile]
 allTiles = let groups = unorderedGroupBy isEquivalent $ makePaths <$> gen [0..7]
            in (\g -> Tile (head g) (length g)) <$> groups
 
-data SvgPrim' a = SvgLine { start :: a, end :: a }
-                | SvgBeizer3 { start :: a, control :: a, end :: a }
-                | SvgBeizer4 { start :: a, control1 :: a, control2 :: a, end :: a }
-                deriving (Functor)
-
-newtype SvgPoint = SvgPoint { unSvgPoing :: (Double, Double) }
-
-type SvgPrim = SvgPrim' SvgPoint
-
-primToSvgString :: SvgPrim -> Text
-primToSvgString x = case x of 
-    (SvgLine s e) -> "M " <> getPoint s <> " L " <> getPoint e
-    (SvgBeizer3 s c e) -> "M " <> getPoint s <> " Q " <> getPoint c <> ", " <> getPoint e
-    (SvgBeizer4 s c1 c2 e) -> "M " <> getPoint s <> " C " <> getPoint c1 <> ", " <> getPoint c2 <> ", " <> getPoint e
-    
-    where getPoint (SvgPoint (x, y)) = (Text.pack . show $ x) <> " " <> (Text.pack . show $ y)
-
 makeHtml :: [SvgPrim] -> Text
 makeHtml x = "<svg height=\"100\" width=\"100\"><path d=\"" <> path <> "\" fill=\"transparent\" stroke=\"black\" /></svg>"
-    where path = Text.concat $ intersperse " " $ primToSvgString <$> x
+    where path = Text.concat $ intersperse " " $ getPath <$> x
 
 scale :: Double -> SvgPrim -> SvgPrim
-scale s p = (\(SvgPoint (x, y)) -> SvgPoint (x * s, y * s)) <$> p
+scale s p = (\(SvgPoint x y) -> SvgPoint (x * s) (y * s)) <$> p
 
-{- Only draw where starting index < ending index -}
-{- renderTile :: Tile -> [SvgPrim] -}
+-- | Render tile to a series of svg paths 
+-- Only draw where starting index < ending index
+renderTile :: Tile -> Vector SvgPrim
 renderTile (Tile paths _) = scale 100 . renderPath <$> liftedPaths
     where liftedPaths :: Vector (Int, Int)
           liftedPaths = Vector.filter (\(p1, p2) -> p1 < p2) $ Vector.imap (\i v -> (i, v)) paths
 
           renderPath :: (Int, Int) -> SvgPrim
           renderPath (p1, p2)
-              | p1 > 1 = fmap rotateRight $ renderPath ((p1 + 6) `mod` 8, (p2 + 6) `mod` 8)
-              | p1 == 1 = fmap flipHorizontal $ renderPath (flipH p1, flipH p2)
+              | p1 > 1 = rotateR $ renderPath ((p1 + 6) `mod` 8, (p2 + 6) `mod` 8)
+              | p1 == 1 = flipH $ renderPath (flipH' p1, flipH' p2)
               | otherwise = render0To p2
 
-          flipH :: Int -> Int
-          flipH i = [1, 0, 7, 6, 5, 4, 3, 2] !! i
+          flipH' :: Int -> Int
+          flipH' i = Vector.fromList [1, 0, 7, 6, 5, 4, 3, 2] Vector.! i
 
           render0To :: Int -> SvgPrim
-          render0To 1 = SvgBeizer4 (SvgPoint (1/3, 0)) (SvgPoint (1/3, 0.22)) (SvgPoint (2/3, 0.22)) (SvgPoint (2/3, 0))
-          render0To 2 = SvgBeizer4 (SvgPoint (1/3, 0)) (SvgPoint (1/3, 1/3)) (SvgPoint (2/3, 1/3)) (SvgPoint (1, 1/3))
-          render0To 3 = SvgBeizer3 (SvgPoint (1/3, 0)) (SvgPoint (1/3, 2/3)) (SvgPoint (1, 2/3))
-          render0To 4 = SvgBeizer4 (SvgPoint (1/3, 0)) (SvgPoint (1/3, 2/3)) (SvgPoint (2/3, 1/3)) (SvgPoint (2/3, 1))
-          render0To 5 = SvgLine (SvgPoint (1/3, 0)) (SvgPoint (1/3, 1))
-          render0To 6 = SvgBeizer4 (SvgPoint (1/3, 0)) (SvgPoint (1/3, 1/3)) (SvgPoint (1/3, 2/3)) (SvgPoint (0, 2/3))
-          render0To 7 = SvgBeizer3 (SvgPoint (1/3, 0)) (SvgPoint (1/3, 1/3)) (SvgPoint (0, 1/3))
-
-          rotateRight :: SvgPoint -> SvgPoint
-          rotateRight (SvgPoint (x, y)) = SvgPoint (1 - y, x)
-
-          flipHorizontal :: SvgPoint -> SvgPoint
-          flipHorizontal (SvgPoint (x, y)) = SvgPoint (1 - x, y)
+          render0To x = case x of
+              1 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 0.22) (SvgPoint _2 0.22) (SvgPoint _2 0)
+              2 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint _2 _1) (SvgPoint 1 _1)
+              3 -> SvgBeizer3 (SvgPoint _1 0) (SvgPoint _1 _2) (SvgPoint 1 _2)
+              4 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _2) (SvgPoint _2 _1) (SvgPoint _2 1)
+              5 -> SvgLine (SvgPoint _1 0) (SvgPoint _1 1)
+              6 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint _1 _2) (SvgPoint 0 _2)
+              7 -> SvgBeizer3 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint 0 _1)
+            where _1 = 1/3
+                  _2 = 2/3           
 
