@@ -32,7 +32,7 @@ rotate :: Tile -> Tile
 rotate (Tile t) = Tile $ Vector.imap (\i v -> ((t Vector.! (i `addMod8` 6))) `addMod8` 2) t
     where addMod8 x y = (x + y) `mod` 8
 
-{- Returns true if the tiles are isomorphic under rotation -}
+{- Returns true if the tiles are equal under rotation -}
 isRotationOf :: Tile -> Tile -> Bool
 isRotationOf l r = l == r 
                 || rotate l == r 
@@ -57,10 +57,6 @@ allTiles :: [Tile]
 allTiles = let groups = unorderedGroupBy isRotationOf $ makePaths <$> gen [0..7]
            in head <$> groups
 
-makeHtml :: [SvgPrim] -> Text
-makeHtml x = "<svg height=\"100\" width=\"100\"><path d=\"" <> path <> "\" fill=\"transparent\" stroke=\"black\" /></svg>"
-    where path = Text.concat $ intersperse " " $ getPath <$> x
-
 scale :: Double -> SvgPrim -> SvgPrim
 scale s p = (\(SvgPoint x y) -> SvgPoint (x * s) (y * s)) <$> p
 
@@ -84,8 +80,8 @@ renderTile (Tile paths) = scale 100 . renderPath <$> liftedPaths
           render0To x = case x of
               1 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 0.22) (SvgPoint _2 0.22) (SvgPoint _2 0)
               2 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint _2 _1) (SvgPoint 1 _1)
-              3 -> SvgBeizer3 (SvgPoint _1 0) (SvgPoint _1 _2) (SvgPoint 1 _2)
-              4 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _2) (SvgPoint _2 _1) (SvgPoint _2 1)
+              3 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint _2 _2) (SvgPoint 1 _2)
+              4 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _2) (SvgPoint _2 _2) (SvgPoint _2 1)
               5 -> SvgLine (SvgPoint _1 0) (SvgPoint _1 1)
               6 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint _1 _2) (SvgPoint 0 _2)
               7 -> SvgBeizer3 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint 0 _1)

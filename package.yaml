@@ -25,6 +25,12 @@ dependencies:
 - array
 - random
 - text
+- servant
+- servant-server
+- servant-lucid
+- lucid
+- wai
+- warp
 
 library:
   source-dirs: src
