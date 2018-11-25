@@ -3,8 +3,8 @@
 module Monte.Tsuro.Tile (
     Tile(..),
     allTiles,
-    rotateTile,
-    tileEq,
+    rotate,
+    isRotationOf,
     renderTile
 ) where
 
@@ -24,36 +24,29 @@ import Monte.Tsuro.Svg
    6 - - 3
      5 4
 -}
-data Tile = Tile 
-    { paths :: Vector Int
-    , rotations :: Int 
-    } deriving (Show, Eq)
-
-tileEq :: Tile -> Tile -> Bool
-tileEq (Tile l _) (Tile r _) = isEquivalent l r
+newtype Tile = Tile { unTile :: Vector Int }
+    deriving (Eq, Ord, Show)
 
 {- rotates the tile clockwise -}
-rotate :: Vector Int -> Vector Int
-rotate t = Vector.imap (\i v -> ((t Vector.! (i `addMod8` 6))) `addMod8` 2) t
+rotate :: Tile -> Tile
+rotate (Tile t) = Tile $ Vector.imap (\i v -> ((t Vector.! (i `addMod8` 6))) `addMod8` 2) t
     where addMod8 x y = (x + y) `mod` 8
 
-rotateTile :: Tile -> Tile
-rotateTile (Tile ps r) = Tile (rotate ps) r
+{- Returns true if the tiles are isomorphic under rotation -}
+isRotationOf :: Tile -> Tile -> Bool
+isRotationOf l r = l == r 
+                || rotate l == r 
+                || (rotate . rotate) l == r 
+                || (rotate . rotate . rotate) l == r
 
 gen :: [Int] -> [[(Int, Int)]]
 gen [] = [[]]
 gen (x:xs) = concat $ [((x,y):) <$> (gen $ delete y xs) | y <- xs]
 
-makePaths :: [(Int, Int)] -> Vector Int
+makePaths :: [(Int, Int)] -> Tile
 makePaths xs = let x1 = Vector.update (Vector.replicate 8 0) (Vector.fromList xs)
                    x2 = Vector.update x1 (swap <$> Vector.fromList xs)
-               in x2
-
-isEquivalent :: Vector Int -> Vector Int -> Bool
-isEquivalent l r = l == r 
-                || rotate l == r 
-                || (rotate . rotate) l == r 
-                || (rotate . rotate . rotate) l == r
+               in Tile x2
 
 unorderedGroupBy :: (a -> a -> Bool) -> [a] -> [[a]]
 unorderedGroupBy _ [] = []
@@ -61,8 +54,8 @@ unorderedGroupBy eq (x:xs) = let (l, r) = partition (eq x) xs
                              in (x : l) : unorderedGroupBy eq r
 
 allTiles :: [Tile]
-allTiles = let groups = unorderedGroupBy isEquivalent $ makePaths <$> gen [0..7]
-           in (\g -> Tile (head g) (length g)) <$> groups
+allTiles = let groups = unorderedGroupBy isRotationOf $ makePaths <$> gen [0..7]
+           in head <$> groups
 
 makeHtml :: [SvgPrim] -> Text
 makeHtml x = "<svg height=\"100\" width=\"100\"><path d=\"" <> path <> "\" fill=\"transparent\" stroke=\"black\" /></svg>"
@@ -74,7 +67,7 @@ scale s p = (\(SvgPoint x y) -> SvgPoint (x * s) (y * s)) <$> p
 -- | Render tile to a series of svg paths 
 -- Only draw where starting index < ending index
 renderTile :: Tile -> Vector SvgPrim
-renderTile (Tile paths _) = scale 100 . renderPath <$> liftedPaths
+renderTile (Tile paths) = scale 100 . renderPath <$> liftedPaths
     where liftedPaths :: Vector (Int, Int)
           liftedPaths = Vector.filter (\(p1, p2) -> p1 < p2) $ Vector.imap (\i v -> (i, v)) paths
 

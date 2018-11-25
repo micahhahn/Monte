@@ -46,7 +46,7 @@ followPaths :: Array BoardIx (Maybe Tile) -> BoardPos -> Maybe BoardPos
 followPaths b p = let (BoardPos (ix, pos)) = p
                   in case b ! ix of
                         Nothing -> Just p    
-                        Just (Tile paths _) -> case mapPath ix (paths Vector.! pos) of
+                        Just (Tile paths) -> case mapPath ix (paths Vector.! pos) of
                             Nothing -> Nothing
                             Just newPos -> followPaths b newPos
 
@@ -56,7 +56,7 @@ followPaths b p = let (BoardPos (ix, pos)) = p
          -> Either Text a -}
 playTile game playerIx tile = do
     let player = players game Vector.! playerIx
-    if any (tileEq tile) (tiles player) then pure () else Left ("This tile is not available to be played" :: Text)
+    if any (isRotationOf tile) (tiles player) then pure () else Left ("This tile is not available to be played" :: Text)
     let newBoard = (board game) // [(fst . unBoardPos . position $ player, Just tile)]
     let newPos = followPaths newBoard (position player)
     Right newPos

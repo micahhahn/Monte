@@ -14,6 +14,7 @@ module Monte.Tsuro.Svg (
 import Data.Text (Text)
 import qualified Data.Text as Text
 
+{- We leave the SVG primitives generic to auto-derive Functor which is very handy for performing transfomations -}
 data SvgPrim' a = SvgLine { start :: a, end :: a }
                 | SvgBeizer3 { start :: a, control :: a, end :: a }
                 | SvgBeizer4 { start :: a, control1 :: a, control2 :: a, end :: a }
