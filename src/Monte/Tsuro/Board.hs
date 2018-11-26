@@ -3,7 +3,8 @@
  module Monte.Tsuro.Board (
      Player(..),
      Game(..),
-     playTile
+     playTile,
+     testBoard
  ) where
 
 import Data.Array
@@ -62,6 +63,8 @@ playTile game playerIx tile = do
     Right newPos
 
 blankBoard = array (BoardIx (0, 0), BoardIx (7, 7)) [(BoardIx (x, y), Nothing) | x <- [0..7], y <- [0..7]]
+
+testBoard = blankBoard // (Vector.toList $ Vector.imap (\i t -> (BoardIx (i `quot` 8, i `mod` 8), Just t)) (Vector.fromList allTiles))
 
 testGame = Game { board = blankBoard 
                 , players = Vector.fromList [ Player (BoardPos (BoardIx (0, 0), 0)) (Vector.fromList (take 3 allTiles))

@@ -17,6 +17,7 @@ import Servant.HTML.Lucid
 
 import Monte.Tsuro.Svg
 import Monte.Tsuro.Tile
+import Monte.Tsuro.Board
 import Monte.LucidExtensions
 
 type MonteApi = "tsuro" :> Get '[HTML] (Html ())
@@ -26,6 +27,9 @@ makeSvg :: Vector SvgPrim -> Html ()
 makeSvg ps = svg_ [height_ "100", width_ "100"] $ do
                 path_ [d_ d, fill_ "transparent", stroke_ "black"]
     where d = Text.intercalate " " . Vector.toList $ getPath <$> ps
+
+renderGame :: Game -> Html ()
+renderGame (Game b _ _ _) = undefined 
 
 tsuro :: Html ()
 tsuro = do
