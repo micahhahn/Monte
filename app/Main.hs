@@ -21,6 +21,8 @@ import Monte.Tsuro.Tile
 import Monte.Tsuro.Board
 import Monte.LucidExtensions
 
+import Paths_Monte
+
 type MonteApi = "tsuro" :> Get '[HTML] (Html ())
            :<|> "static" :> Raw
  
@@ -55,9 +57,11 @@ tsuro = do
                 p_ "This. Is. Tsuro."
                 renderGame testGame
 
-server :: Server MonteApi
-server = return tsuro
-    :<|> serveDirectoryFileServer "C:\\Users\\micah\\Source\\Monte\\src\\Static"
+server :: FilePath -> Server MonteApi
+server staticPath = return tsuro
+    :<|> serveDirectoryFileServer staticPath
 
 main :: IO ()
-main = run 8080 (serve (Proxy :: Proxy MonteApi) server)
+main = do
+    resource <- getDataFileName "src/static/"
+    run 8080 (serve (Proxy :: Proxy MonteApi) (server resource))
