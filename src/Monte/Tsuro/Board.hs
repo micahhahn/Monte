@@ -3,8 +3,10 @@
  module Monte.Tsuro.Board (
      Player(..),
      Game(..),
+     BoardIx(..),
      playTile,
-     testBoard
+     testBoard,
+     testGame
  ) where
 
 import Data.Array
@@ -62,13 +64,13 @@ playTile game playerIx tile = do
     let newPos = followPaths newBoard (position player)
     Right newPos
 
-blankBoard = array (BoardIx (0, 0), BoardIx (7, 7)) [(BoardIx (x, y), Nothing) | x <- [0..7], y <- [0..7]]
+blankBoard = array (BoardIx (0, 0), BoardIx (5, 5)) [(BoardIx (x, y), Nothing) | x <- [0..5], y <- [0..5]]
 
-testBoard = blankBoard // (Vector.toList $ Vector.imap (\i t -> (BoardIx (i `quot` 8, i `mod` 8), Just t)) (Vector.fromList allTiles))
+testBoard = blankBoard // (Vector.toList $ Vector.imap (\i t -> (BoardIx (i `quot` 6, i `mod` 6), Just t)) (Vector.fromList allTiles))
 
-testGame = Game { board = blankBoard 
+testGame = Game { board = testBoard 
                 , players = Vector.fromList [ Player (BoardPos (BoardIx (0, 0), 0)) (Vector.fromList (take 3 allTiles))
-                                            , Player (BoardPos (BoardIx (7, 7), 4)) (Vector.fromList (take 3 . drop 3 $ allTiles)) 
+                                            , Player (BoardPos (BoardIx (5, 5), 4)) (Vector.fromList (take 3 . drop 3 $ allTiles)) 
                                             ]
                 , drawTiles = Vector.fromList . drop 6 $ allTiles
                 , seed = mkStdGen 0

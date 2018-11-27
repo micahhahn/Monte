@@ -1,7 +1,19 @@
 svg
 {
-    margin-left: 1px;
+    margin-left: 0px;
     margin-right: 0px;
-    margin-top: 1px;
+    margin-top: 0px;
     margin-bottom: 0px;
+}
+
+.board
+{
+    border-spacing: 0px;
+}
+
+td
+{
+    padding: 0px;
+    width: 100px;
+    height: 100px;
 }
