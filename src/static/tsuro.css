@@ -4,6 +4,9 @@ svg
     margin-right: 0px;
     margin-top: 0px;
     margin-bottom: 0px;
+    width: 100px;
+    height: 100px;
+    display: block;
 }
 
 .board
@@ -14,6 +17,4 @@ svg
 td
 {
     padding: 0px;
-    width: 100px;
-    height: 100px;
 }
