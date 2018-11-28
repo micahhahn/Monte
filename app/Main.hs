@@ -27,9 +27,11 @@ type MonteApi = "tsuro" :> Get '[HTML] (Html ())
            :<|> "static" :> Raw
  
 makeSvg :: Vector SvgPrim -> Html ()
-makeSvg ps = svg_ [height_ "100", width_ "100"] $ do
+makeSvg ps = svg_ [viewbox_ "0 0 100 100", width_ "100px", height_ "100px"] $ do
                 path_ [d_ d, fill_ "transparent", stroke_ "black"]
     where d = Text.intercalate " " . Vector.toList $ getPath <$> ps
+
+data Page a = Page a
 
 renderGame :: Game -> Html ()
 renderGame (Game board _ _ _) = table_ [class_ "board"] $ do
