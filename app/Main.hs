@@ -20,6 +20,7 @@ import Servant.HTML.Lucid
 import Monte.Tsuro.Svg
 import Monte.Tsuro.Tile
 import Monte.Tsuro.Board
+import Monte.Tsuro.Types
 import Monte.LucidExtensions
 
 import Paths_Monte
@@ -44,8 +45,8 @@ playerColor Gray = "#6D4A4E"
 playerColor Yellow = "#EDC863"
 playerColor Brown = "#9C4D05"
 
-renderGame :: Game -> Html ()
-renderGame (Game board players _ _) = table_ [class_ "board"] $ do
+renderGame :: GameState -> Html ()
+renderGame (GameState board _ _ _ _) = table_ [class_ "board"] $ do
     sequence_ [renderRow y | y <- [top..bottom]]
     sequence_ $ (\p -> div_ [style_ ("color: " <> playerColor (player p))] (toHtml . show $ p)) <$> players
 
@@ -69,7 +70,7 @@ tsuro = do
                 link_ [type_ "text/css", rel_ "stylesheet", href_ "static/tsuro.css"]
             body_ $ do
                 p_ "This. Is. Tsuro."
-                renderGame testGame
+                renderGame undefined
 
 server :: FilePath -> Server MonteApi
 server staticPath = return tsuro

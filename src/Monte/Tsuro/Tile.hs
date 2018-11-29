@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Monte.Tsuro.Tile (
-    Tile(..),
     allTiles,
     rotate,
     isRotationOf,
@@ -17,15 +16,7 @@ import qualified Data.Text as Text
 import Data.Monoid ((<>))
 
 import Monte.Tsuro.Svg
-
-{- 
-     0 1
-   7 - - 2
-   6 - - 3
-     5 4
--}
-newtype Tile = Tile { unTile :: Vector Int }
-    deriving (Eq, Ord, Show)
+import Monte.Tsuro.Types
 
 {- rotates the tile clockwise -}
 rotate :: Tile -> Tile

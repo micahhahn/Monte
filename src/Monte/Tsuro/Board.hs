@@ -1,13 +1,7 @@
  {-# LANGUAGE OverloadedStrings #-}
  
  module Monte.Tsuro.Board (
-     Player(..),
-     PlayerState(..),
-     Game(..),
-     BoardIx(..),
-     playTile,
-     testBoard,
-     testGame
+    followPaths
  ) where
 
 import Data.Array
@@ -17,41 +11,7 @@ import Data.Text (Text)
 import System.Random
 
 import Monte.Tsuro.Tile
-
-newtype BoardIx = BoardIx (Int, Int)
-    deriving (Show, Eq, Ord, Ix)
-
-newtype BoardPos = BoardPos { unBoardPos :: (BoardIx, Int) }
-    deriving (Show)
-
-data Player = White
-            | Black
-            | Green
-            | Red
-            | Blue
-            | Gray
-            | Yellow
-            | Brown
-    deriving (Eq, Ord, Enum, Show)
-
-data PlayerState = PlayerState
-    { player :: Player
-    , position :: BoardPos
-    , tiles :: Vector Tile
-    } deriving (Show)
-
-{- The internal game state  -}
-data GameState = GameState
-    { board :: Array BoardIx (Maybe Tile)
-    , players :: Vector PlayerState
-    , drawTiles :: Vector Tile
-    , seed :: StdGen
-    } deriving (Show)
-
-data Board = Board
-    { tiles :: Array BoardIx (Maybe Tile)
-    , players :: Vector (Player, BoardPos)
-    } deriving (Show)
+import Monte.Tsuro.Types
 
 mapPath :: BoardIx -> Int -> Maybe BoardPos
 mapPath (BoardIx (x, y)) p
@@ -75,21 +35,11 @@ followPaths b p = let (BoardPos (ix, pos)) = p
          -> Int          {- Player number -}
          -> Tile         {- Tile to be played -}
          -> Either Text a -}
-playTile game playerIx tile = do
+{- playTile game playerIx tile = do
     let player = players game Vector.! playerIx
     if any (isRotationOf tile) (tiles player) then pure () else Left ("This tile is not available to be played" :: Text)
     let newBoard = (board game) // [(fst . unBoardPos . position $ player, Just tile)]
     let newPos = followPaths newBoard (position player)
-    Right newPos
+    Right newPos -}
 
 blankBoard = array (BoardIx (0, 0), BoardIx (5, 5)) [(BoardIx (x, y), Nothing) | x <- [0..5], y <- [0..5]]
-
-testBoard = blankBoard // (Vector.toList $ Vector.imap (\i t -> (BoardIx (i `quot` 6, i `mod` 6), Just t)) (Vector.fromList allTiles))
-
-testGame = Game { board = testBoard 
-                , players = Vector.fromList [ PlayerState Green (BoardPos (BoardIx (0, 0), 0)) (Vector.fromList (take 3 allTiles))
-                                            , PlayerState Red (BoardPos (BoardIx (5, 5), 4)) (Vector.fromList (take 3 . drop 3 $ allTiles)) 
-                                            ]
-                , drawTiles = Vector.fromList . drop 6 $ allTiles
-                , seed = mkStdGen 0
-                }
