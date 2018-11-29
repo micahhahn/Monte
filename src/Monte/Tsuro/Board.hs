@@ -2,6 +2,7 @@
  
  module Monte.Tsuro.Board (
      Player(..),
+     PlayerState(..),
      Game(..),
      BoardIx(..),
      playTile,
@@ -23,16 +24,33 @@ newtype BoardIx = BoardIx (Int, Int)
 newtype BoardPos = BoardPos { unBoardPos :: (BoardIx, Int) }
     deriving (Show)
 
-data Player = Player
-    { position :: BoardPos
+data Player = White
+            | Black
+            | Green
+            | Red
+            | Blue
+            | Gray
+            | Yellow
+            | Brown
+    deriving (Eq, Ord, Enum, Show)
+
+data PlayerState = PlayerState
+    { player :: Player
+    , position :: BoardPos
     , tiles :: Vector Tile
     } deriving (Show)
 
-data Game = Game
+{- The internal game state  -}
+data GameState = GameState
     { board :: Array BoardIx (Maybe Tile)
-    , players :: Vector Player
+    , players :: Vector PlayerState
     , drawTiles :: Vector Tile
     , seed :: StdGen
+    } deriving (Show)
+
+data Board = Board
+    { tiles :: Array BoardIx (Maybe Tile)
+    , players :: Vector (Player, BoardPos)
     } deriving (Show)
 
 mapPath :: BoardIx -> Int -> Maybe BoardPos
@@ -69,8 +87,8 @@ blankBoard = array (BoardIx (0, 0), BoardIx (5, 5)) [(BoardIx (x, y), Nothing) |
 testBoard = blankBoard // (Vector.toList $ Vector.imap (\i t -> (BoardIx (i `quot` 6, i `mod` 6), Just t)) (Vector.fromList allTiles))
 
 testGame = Game { board = testBoard 
-                , players = Vector.fromList [ Player (BoardPos (BoardIx (0, 0), 0)) (Vector.fromList (take 3 allTiles))
-                                            , Player (BoardPos (BoardIx (5, 5), 4)) (Vector.fromList (take 3 . drop 3 $ allTiles)) 
+                , players = Vector.fromList [ PlayerState Green (BoardPos (BoardIx (0, 0), 0)) (Vector.fromList (take 3 allTiles))
+                                            , PlayerState Red (BoardPos (BoardIx (5, 5), 4)) (Vector.fromList (take 3 . drop 3 $ allTiles)) 
                                             ]
                 , drawTiles = Vector.fromList . drop 6 $ allTiles
                 , seed = mkStdGen 0
