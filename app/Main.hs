@@ -5,6 +5,7 @@
 module Main where
 
 import Control.Monad
+import Data.Monoid ((<>))
 import Data.Proxy
 import Data.Array
 import Data.Text (Text)
@@ -31,9 +32,20 @@ makeSvg ps = svg_ [viewbox_ "0 0 100 100", width_ "100px", height_ "100px"] $ do
 
 data Page a = Page a
 
+playerColor :: Player -> Text
+playerColor White = "#FFFFFF"
+playerColor Black = "#000000"
+playerColor Green = "#7B6638"
+playerColor Red = "#7F0208"
+playerColor Blue = "#354767"
+playerColor Gray = "#6D4A4E"
+playerColor Yellow = "#EDC863"
+playerColor Brown = "#9C4D05"
+
 renderGame :: Game -> Html ()
-renderGame (Game board _ _ _) = table_ [class_ "board"] $ do
+renderGame (Game board players _ _) = table_ [class_ "board"] $ do
     sequence_ [renderRow y | y <- [top..bottom]]
+    sequence_ $ (\p -> div_ [style_ ("color: " <> playerColor (player p))] (toHtml . show $ p)) <$> players
 
     where (BoardIx (left, top), BoardIx (right, bottom)) = bounds board
 
