@@ -28,6 +28,38 @@ import Paths_Monte
 type MonteApi = "tsuro" :> Get '[HTML] (Html ())
            :<|> "static" :> Raw
  
+
+scale :: Double -> SvgPrim -> SvgPrim
+scale s p = (\(SvgPoint x y) -> SvgPoint (x * s) (y * s)) <$> p
+
+-- | Render tile to a series of svg paths 
+-- Only draw where starting index < ending index
+renderTile :: Tile -> Vector SvgPrim
+renderTile (Tile paths) = scale 100 . renderPath <$> liftedPaths
+    where liftedPaths :: Vector (Int, Int)
+          liftedPaths = Vector.filter (\(p1, p2) -> p1 < p2) $ Vector.imap (\i v -> (i, v)) paths
+
+          renderPath :: (Int, Int) -> SvgPrim
+          renderPath (p1, p2)
+              | p1 > 1 = rotateR $ renderPath ((p1 + 6) `mod` 8, (p2 + 6) `mod` 8)
+              | p1 == 1 = flipH $ renderPath (flipH' p1, flipH' p2)
+              | otherwise = render0To p2
+
+          flipH' :: Int -> Int
+          flipH' i = Vector.fromList [1, 0, 7, 6, 5, 4, 3, 2] Vector.! i
+
+          render0To :: Int -> SvgPrim
+          render0To x = case x of
+              1 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 0.22) (SvgPoint _2 0.22) (SvgPoint _2 0)
+              2 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint _2 _1) (SvgPoint 1 _1)
+              3 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint _2 _2) (SvgPoint 1 _2)
+              4 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _2) (SvgPoint _2 _2) (SvgPoint _2 1)
+              5 -> SvgLine (SvgPoint _1 0) (SvgPoint _1 1)
+              6 -> SvgBeizer4 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint _1 _2) (SvgPoint 0 _2)
+              7 -> SvgBeizer3 (SvgPoint _1 0) (SvgPoint _1 _1) (SvgPoint 0 _1)
+              where _1 = 1/3
+                    _2 = 2/3    
+
 makeSvg :: Vector SvgPrim -> Html ()
 makeSvg ps = svg_ [viewbox_ "0 0 100 100", width_ "100px", height_ "100px"] $ do
                 path_ [d_ d, fill_ "transparent", stroke_ "black"]
@@ -46,7 +78,7 @@ playerColor Yellow = "#EDC863"
 playerColor Brown = "#9C4D05"
 
 renderGame :: GameState -> Html ()
-renderGame (GameState board _ _ _ _) = table_ [class_ "board"] $ do
+renderGame (GameState board _ _ _ _) = undefined {-table_ [class_ "board"] $ do
     sequence_ [renderRow y | y <- [top..bottom]]
     sequence_ $ (\p -> div_ [style_ ("color: " <> playerColor (player p))] (toHtml . show $ p)) <$> players
 
@@ -59,7 +91,7 @@ renderGame (GameState board _ _ _ _) = table_ [class_ "board"] $ do
           renderTd :: (Int, Int) -> Html ()
           renderTd i = case board ! (BoardIx i) of
               Just t -> td_ [class_ "tile"] (makeSvg $ renderTile t)
-              Nothing -> td_ [class_ "blank"] ""
+              Nothing -> td_ [class_ "blank"] ""-}
 
 tsuro :: Html ()
 tsuro = do
