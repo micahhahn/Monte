@@ -1,7 +1,8 @@
 module Monte.Tsuro.Tile (
     allTiles,
     rotate,
-    isRotationOf
+    isRotationOf,
+    allRotations
 ) where
 
 import Data.List
@@ -23,7 +24,18 @@ isRotationOf l r = l == r
                 || (rotate . rotate) l == r 
                 || (rotate . rotate . rotate) l == r
 
-{-| Contains all unique tiles under rotation.
+-- | The 'allRotations' function returns all __unique__ rotations of a tile.
+allRotations :: Tile -> [Tile]
+allRotations t = if r2 /= t
+                 then t : r1 : r2 : [r3]
+                 else if r1 /= t
+                      then t : [r2]
+                      else [t]
+    where r1 = rotate t
+          r2 = rotate r1
+          r3 = rotate r2
+
+{-| 'allTiles' contains all unique tiles under rotation.
     
     The tiles could be listed manually somewhat tediously, but it is easy enough to compute all 
     possible tile permutations and then combine ones rotationally unique to each other.
