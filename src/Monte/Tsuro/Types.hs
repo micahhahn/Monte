@@ -52,7 +52,7 @@ newtype BoardPos = BoardPos (BoardIx, Int)
 --   This is public information - known to all players
 data BoardState = BoardState
     { tiles :: Array BoardIx (Maybe Tile)
-    , players :: Vector (Player, BoardPos)
+    , players :: Vector (Player, Maybe BoardPos)  -- ^ A player's 'BoardPos' is 'Nothing' in the beginning of the game when they haven't chosen a starting position
     } deriving (Show)
 
 -- | The 'GameState' type represents the entire state of the game.  This is __not__ public

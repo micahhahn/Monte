@@ -30,6 +30,7 @@ dependencies:
 - servant
 - servant-server
 - servant-lucid
+- http-api-data
 - lucid
 - wai
 - warp

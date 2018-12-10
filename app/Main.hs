@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Main where
 
@@ -16,7 +17,11 @@ import Lucid
 import Network.Wai.Handler.Warp
 import Servant
 import Servant.HTML.Lucid
+import Servant.Links
+import Web.FormUrlEncoded (FromForm)
+import GHC.Generics
 
+import Monte.MonteAPI
 import Monte.Tsuro.Svg
 import Monte.Tsuro.Tile
 import Monte.Tsuro.Board
@@ -24,10 +29,6 @@ import Monte.Tsuro.Types
 import Monte.LucidExtensions
 
 import Paths_Monte
-
-type MonteApi = "tsuro" :> Get '[HTML] (Html ())
-           :<|> "static" :> Raw
- 
 
 scale :: Double -> SvgPrim -> SvgPrim
 scale s p = (\(SvgPoint x y) -> SvgPoint (x * s) (y * s)) <$> p
@@ -77,21 +78,36 @@ playerColor Gray = "#6D4A4E"
 playerColor Yellow = "#EDC863"
 playerColor Brown = "#9C4D05"
 
-renderGame :: GameState -> Html ()
-renderGame (GameState board _ _ _ _) = undefined {-table_ [class_ "board"] $ do
-    sequence_ [renderRow y | y <- [top..bottom]]
-    sequence_ $ (\p -> div_ [style_ ("color: " <> playerColor (player p))] (toHtml . show $ p)) <$> players
+renderGameView :: GameView -> Html ()
+renderGameView (GameView board hand) = renderBoard board
 
-    where (BoardIx (left, top), BoardIx (right, bottom)) = bounds board
+renderBoard :: BoardState -> Html ()
+renderBoard (BoardState ts ps) = table_ [class_ "board"] $ do
+    sequence_ [renderRow y | y <- [top..bottom]]
+    -- sequence_ $ (\p -> div_ [style_ ("color: " <> playerColor (player p))] (toHtml . show $ p)) <$> players
+
+    where (BoardIx (left, top), BoardIx (right, bottom)) = bounds ts
 
           renderRow :: Int -> Html ()
           renderRow y = tr_ [class_ "row"] $ do
               sequence_ [renderTd (x, y) | x <- [left..right]]
 
           renderTd :: (Int, Int) -> Html ()
-          renderTd i = case board ! (BoardIx i) of
+          renderTd i = case ts ! (BoardIx i) of
               Just t -> td_ [class_ "tile"] (makeSvg $ renderTile t)
-              Nothing -> td_ [class_ "blank"] ""-}
+              Nothing -> td_ [class_ "blank"] ""
+
+data TsuroHeader a = TsuroHeader
+
+tsuroHeader :: Html () -> Html ()
+tsuroHeader content = do
+    doctypehtml_ $ do
+        html_ $ do
+            head_ $ do
+                title_ "Tsuro"
+                link_ [type_ "text/css", rel_ "stylesheet", href_ "static/tsuro.css"]
+            body_ $ do
+                content
 
 tsuro :: Html ()
 tsuro = do
@@ -102,11 +118,26 @@ tsuro = do
                 link_ [type_ "text/css", rel_ "stylesheet", href_ "static/tsuro.css"]
             body_ $ do
                 p_ "This. Is. Tsuro."
-                renderGame undefined
+                -- renderGameView 
+
+tsuroNew :: Html ()
+tsuroNew = tsuroHeader $ do
+    h2_ "New Game"
+    form_ [method_ "POST", action_ ("/" <> (toUrlPiece $ safeLink (Proxy :: Proxy MonteApi) (Proxy :: Proxy TsuroNewPost)))] $ do
+        label_ [] "Players: "
+        input_ [type_ "text", name_ "players", value_ "2"]
+        input_ [type_ "submit"]
+    
+tsuroNewPost :: GameParameters -> Handler (Html ())
+tsuroNewPost (GameParameters g) = return . tsuroHeader $ do
+    p_ "New Game Created"
+    p_ (toHtml (show g))
 
 server :: FilePath -> Server MonteApi
 server staticPath = return tsuro
-    :<|> serveDirectoryFileServer staticPath
+               :<|> return tsuroNew
+               :<|> tsuroNewPost
+               :<|> serveDirectoryFileServer staticPath
 
 main :: IO ()
 main = do
